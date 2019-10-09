@@ -66,11 +66,24 @@
        (vector? %) ((fn [v] (mapv canonicalize-sym v))))
     deps-map))
 
+(defn- canonicalize-local-roots
+  [deps-map]
+  (walk/postwalk
+    #(cond-> %
+       (and (map? %) (find % :local/root))
+         (update :local/root (fn [path]
+                               (-> path
+                                   jio/file
+                                   dir/canonicalize
+                                   .getAbsolutePath))))
+    deps-map))
+
 (defn slurp-deps
   "Read a single deps.edn file from disk and canonicalize symbols,
   return a deps map."
   [dep-file]
-  (-> dep-file slurp-edn-map canonicalize-all-syms))
+  (dir/with-dir (-> dep-file jio/file .getAbsoluteFile .getParentFile)
+    (-> dep-file slurp-edn-map canonicalize-all-syms canonicalize-local-roots)))
 
 (defn- merge-or-replace
   "If maps, merge, otherwise replace"
