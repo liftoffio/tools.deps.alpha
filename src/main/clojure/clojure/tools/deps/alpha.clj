@@ -489,16 +489,20 @@
   {:arglists '([deps-map args-map])}
   ([deps-map args-map]
    (let [{:keys [extra-deps default-deps override-deps threads trace]} args-map
-         n (or threads concurrent/processors)
-         executor (concurrent/new-executor n)
          deps (merge (:deps deps-map) extra-deps)
-         version-map (-> deps
-                       (canonicalize-deps deps-map)
-                       (expand-deps default-deps override-deps deps-map executor trace)
-                       cut-orphans)
-         lib-map (lib-paths version-map)
-         lib-map' (download-libs executor lib-map deps-map)]
-     (with-meta lib-map' (meta version-map))))
+         n (or threads concurrent/processors)
+         executor (concurrent/new-executor n)]
+     (try
+       (let [version-map (-> deps
+                             (canonicalize-deps deps-map)
+                             (expand-deps default-deps override-deps deps-map executor trace)
+                             cut-orphans)
+             lib-map (lib-paths version-map)
+             lib-map' (download-libs executor lib-map deps-map)]
+         (with-meta lib-map' (meta version-map)))
+       (finally
+         ;; Shutdown executor to avoid creating too many threads.
+         (.shutdownNow executor)))))
   ;; deprecated arity, retained for backwards compatibility
   ([deps-map args-map settings]
    (resolve-deps deps-map (merge args-map settings))))
