@@ -29,11 +29,7 @@
 
 (defn submit-task
   ^Future [^ExecutorService executor f]
-  (let [bindings (get-thread-bindings)
-        task #(do
-                (push-thread-bindings bindings)
-                (f))]
-    (.submit executor ^Callable task)))
+  (.submit executor ^Callable (bound-fn* f)))
 
 (defn shutdown-on-error
   [^ExecutorService executor]
