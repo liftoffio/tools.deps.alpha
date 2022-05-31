@@ -181,6 +181,19 @@
         </execution>
       </executions>
       </plugin>
+      <plugin>
+        <!-- Disable Sonatype Nexus Extensions. These are inheritied from the
+             org.clojure/pom.contrib parent POM -->
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <extensions>false</extensions>
+        <executions>
+          <execution>
+            <id>injected-nexus-deploy</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
